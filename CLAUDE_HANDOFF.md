@@ -10,7 +10,7 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 
 - Local repo: `/Users/apolon/Roblox/ViralSlope`
 - GitHub: `https://github.com/rinpazuz-commits/ViralSlope`
-- Main branch; last known pushed commit: `b1c468d Polish Rift Runners production slice`
+- Main branch; latest pushed commit: `f922f67 Add earned-coin relic shop`
 - Roblox Studio place tab: `Place1`; Rojo plugin was connected to `localhost:34872` in the previous session.
 - All player-facing text is English.
 - Game concept/name: **Rift Runners** — collect original alien creatures during a timed expedition, then extract at the portal before the Warden catches you or the rift closes.
@@ -28,14 +28,14 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 
 ## Verified and unverified
 
-- `rojo build -o /private/tmp/RiftRunners.rbxlx` and `git diff --check` succeeded after commit `b1c468d`.
-- Roblox Studio showed the English HUD, portal, pickups, and a round starting. Earlier Studio checks verified pickup, portal banking, collection update, and coin award in the successful case.
-- Not yet verified: several full rounds, death/full-bag/Warden balance under real play, multi-client concurrency, actual mobile touch UI, performance on a phone, DataStore persistence across sessions, or player retention. Do not say those are tested.
+- `rojo build -o /private/tmp/RiftRunners.rbxlx` and `git diff --check` succeeded after `f922f67`.
+- Roblox Studio playtest confirmed the English HUD, cosmetic shop with all three prices, and the insufficient-Coins response at a 0 balance. Restarted Studio on the latest source; the game and portal loaded. Nameplates were reduced in size and view distance after overlap was observed.
+- Not yet verified: successful purchase/equip/unequip/respawn visuals, several full rounds, death/full-bag/Warden balance under real play, multi-client concurrency, actual mobile touch UI, phone performance, DataStore persistence across sessions, or player retention. Do not say those are tested.
 - Previous Claude reviews were based on descriptions, not direct inspection of the running game/current code. Main useful feedback: close the coin progression loop, validate risk cases, improve visual/audio identity, and test DataStore/authority.
 
 ## Active next milestone
 
-Finish validating the cosmetic shop loop in Roblox Studio: purchase, insufficient-balance response, equip/unequip, respawn reapplication, and a fresh build/restart. Then add audio/visual polish, test multiple players and mobile readability, and address session locking/persistence before a private published test.
+Finish validating the cosmetic shop loop in Roblox Studio: successful purchase, equip/unequip, and respawn reapplication (the insufficient-balance response and fresh build/restart already passed). Then add audio/visual polish, test multiple players and mobile readability, and address session locking/persistence before a private published test.
 
 Claude reviewed the architecture from a summary but cannot read this local repo from its normal desktop chat. It recommended versioned migration, preserving profiles on load failure, server-owned prices/atomic debit, late-join state fetch, low-cost effects, and large mobile targets. Several are implemented; session locking and live DataStore tests remain open. For a direct review, paste `PlayerDataService.luau`, `CosmeticService.luau`, `CosmeticShop.client.luau`, and `CosmeticCatalog.luau` into Claude or use Claude Code against this repo. Inspect `git status` and this handoff before edits, and coordinate overlapping writes.
 
