@@ -2,15 +2,15 @@
 
 ## Player promise
 
-Run into a bright, alien rift, find original creatures with visible rarity, and make it back to the home portal before the rift closes. Every creature in your satchel is at risk until you return.
+Run into a glowing alien wilderness, find original creatures with visible rarity, and make it back to the home portal before the rift closes. Every creature in your satchel is at risk until you return.
 
 ## Core loop
 
 1. Spawn at the home portal and read the one-line objective.
-2. Explore four colored rift gardens and collect up to six Riftlings.
+2. Explore four colored rift gardens, glowstone formations, and collect up to six Riftlings.
 3. The Warden wakes after the first creature is picked up and chases players carrying finds.
 4. Return to the home portal to permanently add creatures to the collection and convert their value into coins.
-5. Compare the public Coins and Critters leaderboard, then enter the next run.
+5. Open the field guide to see discovered species, review the run recap, compare the Coins and Critters leaderboard, then enter again.
 
 ## Product choices
 
@@ -25,7 +25,7 @@ Run into a bright, alien rift, find original creatures with visible rarity, and 
 - First creature is a low-risk Common close to the portal.
 - A featured Epic is present each run, far enough away to require a decision.
 - Bag limit: 6. Carrying more slows the player slightly.
-- The Warden gives a warning and a short grace period, then approaches the nearest player carrying creatures. Its speed stays below the loaded player's movement speed; greed, detours, and mistakes create the danger.
+- The Warden gives a warning and a short grace period, then approaches the nearest player carrying creatures. Players with a light bag can outrun it; a full satchel slows them enough for the Warden to catch up.
 - Runs last 150 seconds, with a 12-second home break.
 
 ## Ship gates

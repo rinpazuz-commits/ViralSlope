@@ -135,12 +135,14 @@ function PlayerDataService:AddCreature(player, creature)
 	if collectionValue then collectionValue.Value = countCollection(data.Collection) end
 end
 
-function PlayerDataService:CompleteExpedition(player, totalSecured)
+function PlayerDataService:CompleteExpedition(player, totalSecured, countExpedition)
 	local data = cache[player]
 	if not data then return end
-	data.Expeditions += 1
+	if countExpedition ~= false then
+		data.Expeditions += 1
+		player:SetAttribute("Expeditions", data.Expeditions)
+	end
 	data.TotalSecured += sanitizeNumber(totalSecured, 0, 1_000_000_000)
-	player:SetAttribute("Expeditions", data.Expeditions)
 	player:SetAttribute("TotalSecured", data.TotalSecured)
 end
 

@@ -1,6 +1,6 @@
 return {
 	GAME_NAME = "Rift Runners",
-	VERSION = "0.3.0",
+	VERSION = "0.4.0",
 	ROUND_SECONDS = 150,
 	BREAK_SECONDS = 12,
 	PICKUP_COUNT = 24,

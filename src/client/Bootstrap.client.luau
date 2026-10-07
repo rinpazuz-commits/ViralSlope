@@ -251,21 +251,38 @@ local function refresh()
 	if currentPhase == "RIFT_RUN" then
 		phase.Text = "RIFT RUN"
 		phase.TextColor3 = palette.coral
-		hint.Text = "Find Riftlings. Bring them through the glowing portal before the rift closes."
+		hint.Text = "Find Riftlings. Bank them at the portal before the rift closes."
 	elseif currentPhase == "RIFT_SURGE" then
 		phase.Text = "RIFT SURGE"
 		phase.TextColor3 = palette.ink
-		hint.Text = "The rift has closed. Secure your finds next run."
+		hint.Text = "The rift closed. Your banked finds are safe. Next run soon."
 	else
 		phase.Text = "HOME PORTAL • NEXT RUN"
 		phase.TextColor3 = palette.gold
-		hint.Text = "Collect up to 6 Riftlings, then return to the center portal to keep them."
+		hint.Text = "Find up to 6. Return to the glowing portal to bank them."
 	end
 	timer.Text = formatTime(remaining)
 	local count = player:GetAttribute("BagCount") or 0
-	bag.Text = string.format("SATCHEL  %d/%d  •  %d coins at risk", count, 6, player:GetAttribute("BagValue") or 0)
+	bag.Text = string.format("BAG  %d/%d  •  %d at risk", count, 6, player:GetAttribute("BagValue") or 0)
 	coins.Text = string.format("%d COINS", player:GetAttribute("Coins") or 0)
-	collection.Text = string.format("COLLECTION  %d  •  RUNS SECURED  %d  •  OPEN FIELD GUIDE ›", player:GetAttribute("CollectionCount") or 0, player:GetAttribute("Expeditions") or 0)
+	collection.Text = string.format("COLLECTION %d  •  %d RUNS  •  FIELD GUIDE ›", player:GetAttribute("CollectionCount") or 0, player:GetAttribute("Expeditions") or 0)
+end
+
+local function applyResponsiveScale()
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	local compact = camera.ViewportSize.X < 430
+	bag.TextSize = compact and 12 or 14
+	coins.TextSize = compact and 12 or 14
+	collection.TextSize = compact and 9 or 12
+	hint.TextSize = compact and 9 or 11
+	phase.TextSize = compact and 12 or 14
+	timer.TextSize = compact and 18 or 20
+end
+
+applyResponsiveScale()
+if workspace.CurrentCamera then
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(applyResponsiveScale)
 end
 
 for _, attribute in { "Phase", "RoundTime", "BagCount", "BagValue", "Coins", "CollectionCount", "Expeditions" } do

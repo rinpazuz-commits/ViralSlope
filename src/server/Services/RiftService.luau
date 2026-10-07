@@ -22,6 +22,7 @@ local bankTrigger
 local bags = {}
 local baseWalkSpeeds = {}
 local roundSummary = {}
+local lastFullNotice = setmetatable({}, { __mode = "k" })
 local lastHitAt = setmetatable({}, { __mode = "k" })
 local MAX_BAG = 6
 local BAG_SPEED_PENALTY = 0.55
@@ -70,6 +71,22 @@ local function createAlienPlant(parent, position, scale, tint)
 		local leaf = makePart(parent, "GlowLeaf", Vector3.new(4, 2, 3) * scale, position + Vector3.new(math.cos(angle) * 2 * scale, (5 + index * 1.1) * scale, math.sin(angle) * 2 * scale), tint, Enum.Material.Neon, Enum.PartType.Ball)
 		leaf.CanCollide = false
 	end
+end
+
+local function createRiftOutcrop(parent, position, accent, scale)
+	local rock = makePart(parent, "RiftStone", Vector3.new(10, 4, 9) * scale, position + Vector3.new(0, 1.7 * scale, 0), Color3.fromRGB(50, 66, 95), Enum.Material.Slate, Enum.PartType.Ball)
+	rock.CanCollide = false
+	rock.CanTouch = false
+	rock.CanQuery = false
+	local height = rng:NextNumber(9, 16) * scale
+	local shard = makePart(parent, "GlowShard", Vector3.new(2.1, height, 2.1) * scale, position + Vector3.new(rng:NextNumber(-2, 2) * scale, height / 2 + 2 * scale, rng:NextNumber(-2, 2) * scale), accent, Enum.Material.Neon, Enum.PartType.Ball)
+	shard.CanCollide = false
+	shard.CanTouch = false
+	shard.CanQuery = false
+	local second = makePart(parent, "GlowShard", Vector3.new(1.4, height * 0.72, 1.4) * scale, position + Vector3.new(3 * scale, height * 0.37 + 2 * scale, -2 * scale), accent:Lerp(Color3.new(1, 1, 1), 0.24), Enum.Material.Neon, Enum.PartType.Ball)
+	second.CanCollide = false
+	second.CanTouch = false
+	second.CanQuery = false
 end
 
 local function buildWorld()
@@ -174,6 +191,29 @@ local function buildWorld()
 			local offset = Vector3.new(rng:NextNumber(-20, 20), 0, rng:NextNumber(-20, 20))
 			createAlienPlant(world, Vector3.new(x, 2, z) + offset, rng:NextNumber(0.65, 1.05), landmarkColors[index])
 		end
+		for markerIndex = 1, 4 do
+			local radius = 58 + markerIndex * 27
+			local markerX, markerZ = math.cos(angle) * radius, math.sin(angle) * radius
+			local trail = makePart(world, "WayfinderTrail", Vector3.new(0.8, 9, 9), Vector3.new(markerX, 0.4, markerZ), landmarkColors[index], Enum.Material.Slate, Enum.PartType.Cylinder)
+			trail.Orientation = Vector3.new(0, 0, 90)
+			trail.Transparency = 0.28
+			trail.CanCollide = false
+			trail.CanTouch = false
+			trail.CanQuery = false
+			local markerLight = makePart(world, "TrailBeacon", Vector3.new(2, 2, 2), Vector3.new(markerX, 2.2, markerZ), landmarkColors[index], Enum.Material.Neon, Enum.PartType.Ball)
+			markerLight.CanCollide = false
+			markerLight.CanTouch = false
+			markerLight.CanQuery = false
+		end
+	end
+
+	-- Scatter compact glowstone clusters through the open routes so the void reads as a place, not an empty plate.
+	for index = 1, 30 do
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local radius = rng:NextNumber(92, 252)
+		local position = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		local quadrant = math.floor(((angle + math.pi / 4) % (math.pi * 2)) / (math.pi / 2)) + 1
+		createRiftOutcrop(world, position, landmarkColors[quadrant], rng:NextNumber(0.55, 1.05))
 	end
 
 	local wardenModel = Instance.new("Model")
@@ -333,11 +373,14 @@ local function updateBag(player)
 end
 
 local function addToBag(player, creature)
-	if not active then return end
+	if not active then return false end
 	local bag = bags[player] or {}
 	if #bag >= MAX_BAG then
-		player:SetAttribute("BagFullNonce", (player:GetAttribute("BagFullNonce") or 0) + 1)
-		return
+		if os.clock() - (lastFullNotice[player] or 0) >= 2 then
+			lastFullNotice[player] = os.clock()
+			player:SetAttribute("BagFullNonce", (player:GetAttribute("BagFullNonce") or 0) + 1)
+		end
+		return false
 	end
 	table.insert(bag, creature)
 	bags[player] = bag
@@ -354,6 +397,7 @@ local function addToBag(player, creature)
 			if active then wardenAwake = true end
 		end)
 	end
+	return true
 end
 
 local function spawnCreatures()
@@ -400,17 +444,17 @@ local function spawnCreatures()
 			creature = CreatureCatalog.Roll(rng)
 		end
 		local claimed = false
-		createCreatureVisual(creature, Vector3.new(x, 4.2, z), salvageFolder, function(hit)
+		local creatureModel
+		creatureModel = createCreatureVisual(creature, Vector3.new(x, 4.2, z), salvageFolder, function(hit)
 			if claimed or not active then return end
 			local character = hit:FindFirstAncestorOfClass("Model")
 			local player = character and Players:GetPlayerFromCharacter(character)
 			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 			if not player or not humanoid or humanoid.Health <= 0 then return end
 			if not player:GetAttribute("DataReady") then return end
+			if not addToBag(player, creature) then return end
 			claimed = true
-			addToBag(player, creature)
-			local model = salvageFolder and salvageFolder:FindFirstChild("Riftling_" .. creature.Id)
-			if model then model:Destroy() end
+			if creatureModel and creatureModel.Parent then creatureModel:Destroy() end
 		end)
 	end
 end
@@ -431,14 +475,15 @@ function RiftService:BankBag(player)
 		PlayerDataService:AddCreature(player, creature)
 	end
 	CurrencyService:Add(player, value)
-	PlayerDataService:CompleteExpedition(player, value)
 	local summary = roundSummary[player]
+	-- A run may bank several times. Count its expedition once, while every
+	-- successful bank still adds to lifetime secured totals and run recap.
+	PlayerDataService:CompleteExpedition(player, value, not summary or summary.Secured == 0)
 	if summary then
 		summary.Secured += #bag
 		summary.Coins += value
 	end
 	player:SetAttribute("LastBankCount", #bag)
-	player:SetAttribute("LastBankValue", 0)
 	player:SetAttribute("LastBankValue", value)
 	clearBag(player)
 	return true
@@ -471,7 +516,11 @@ local function updateWarden(timeLeft)
 		if delta.Magnitude > 0 then
 			warden.Position += delta.Unit * math.min(speed, delta.Magnitude)
 		end
-		if wardenEyes then wardenEyes.Position = warden.Position + Vector3.new(0, 0.5, -5) end
+		local facing = Vector3.new(targetRoot.Position.X, warden.Position.Y, targetRoot.Position.Z)
+		if (facing - warden.Position).Magnitude > 0.1 then
+			warden.CFrame = CFrame.lookAt(warden.Position, facing)
+		end
+		if wardenEyes then wardenEyes.CFrame = warden.CFrame * CFrame.new(0, 0.5, -5) end
 		if delta.Magnitude < 9 and os.clock() - (lastHitAt[targetPlayer] or 0) >= 1.8 then
 			local targetHumanoid = targetPlayer.Character and targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 			if targetHumanoid then
@@ -482,7 +531,11 @@ local function updateWarden(timeLeft)
 		end
 	else
 		warden.Position = warden.Position:Lerp(WARDEN_HOME, 0.12)
-		if wardenEyes then wardenEyes.Position = warden.Position + Vector3.new(0, 0.5, -5) end
+		local facing = Vector3.new(0, warden.Position.Y, 0)
+		if (facing - warden.Position).Magnitude > 0.1 then
+			warden.CFrame = CFrame.lookAt(warden.Position, facing)
+		end
+		if wardenEyes then wardenEyes.CFrame = warden.CFrame * CFrame.new(0, 0.5, -5) end
 	end
 end
 
@@ -491,8 +544,10 @@ local function resetRound()
 	wardenAwake = false
 	wardenWakePending = false
 	for _, player in Players:GetPlayers() do player:SetAttribute("RoundWarning", "") end
-	if warden and warden.Parent then warden.Position = WARDEN_HOME end
-	if wardenEyes then wardenEyes.Position = WARDEN_HOME + Vector3.new(0, 0.5, -5) end
+	if warden and warden.Parent then
+		warden.CFrame = CFrame.lookAt(WARDEN_HOME, Vector3.new(0, WARDEN_HOME.Y, 0))
+	end
+	if wardenEyes then wardenEyes.CFrame = warden.CFrame * CFrame.new(0, 0.5, -5) end
 	for _, player in Players:GetPlayers() do
 		local bag = bags[player] or {}
 		if #bag > 0 then
@@ -595,6 +650,7 @@ function RiftService:Init()
 		roundSummary[player] = nil
 		baseWalkSpeeds[player] = nil
 		lastHitAt[player] = nil
+		lastFullNotice[player] = nil
 	end)
 	task.spawn(runLoop)
 	print("[Rift Runners] Rift service ready")
