@@ -42,6 +42,8 @@ Safely validate the extraction burst and cosmetic purchase/equip/unequip/respawn
 
 Claude reviewed the architecture and the reported Studio checks, but its normal desktop chat cannot read this local repo. It confirmed the unverified gates: successful purchase across restart, respawn cosmetics, migration with real v2 data, and durable DataStore behavior. It recommends using a separate private test universe/DataStore, then testing session-lock reacquisition, fast repeat purchases, insufficient balance, non-owned equip attempts, and cosmetic cleanup/reapply through respawn. For source review, paste `PlayerDataService.luau`, `CosmeticService.luau`, `CosmeticShop.client.luau`, and `CosmeticCatalog.luau` into Claude or use Claude Code against this repo. Inspect `git status` and this handoff before edits, and coordinate overlapping writes.
 
+Claude's latest product review says to prioritize the real private DataStore/migration checks, then observe 5–10 outside players (including mobile) to see whether they voluntarily start a second run, then decide whether the loop needs changes or merits more content/polish. It cannot read this local handoff in its regular chat, so its review used only the status message. A Studio attempt to play through collection/extraction is still inconclusive; no successful pickup/bank or extraction-burst visual has been confirmed.
+
 ## Remaining release gates
 
 1. Playtest the extraction burst and earned-coin cosmetic loop.
