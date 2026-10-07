@@ -422,8 +422,25 @@ showPersistenceNotice()
 print("[Rift Runners] HUD ready (English)")
 
 task.spawn(function()
+	local trackedPickupFolder
+	local pickupRemovedConnection
 	while gui.Parent do
-		if player:GetAttribute("Phase") == "RIFT_RUN" then refresh() end
+		if player:GetAttribute("Phase") == "RIFT_RUN" then
+			local world = Workspace:FindFirstChild("RiftRunnersWorld")
+			local pickups = world and world:FindFirstChild("WildRiftlings")
+			if pickups ~= trackedPickupFolder then
+				if pickupRemovedConnection then pickupRemovedConnection:Disconnect() end
+				trackedPickupFolder = pickups
+				pickupRemovedConnection = if pickups then pickups.ChildRemoved:Connect(function()
+					if player:GetAttribute("Phase") == "RIFT_RUN" then task.defer(refresh) end
+				end) else nil
+			end
+			refresh()
+		else
+			if pickupRemovedConnection then pickupRemovedConnection:Disconnect() end
+			pickupRemovedConnection = nil
+			trackedPickupFolder = nil
+		end
 		task.wait(1)
 	end
 end)
