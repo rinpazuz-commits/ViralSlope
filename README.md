@@ -23,5 +23,7 @@ rojo serve
 - Safe extraction banks creatures into the persistent collection and adds coins; a field guide tracks all 12 discoveries.
 - End-of-run recap reports secured finds, lost finds, and coins earned; server checks pickups, bag limits, and portal distance.
 - English responsive HUD, field guide, end-of-run recap, and in-server Coins/Critters leaderboard.
+- Rift Relic Atelier: three cosmetics purchasable with earned Coins, with server-validated ownership/equipping and character visuals.
+- Schema v3 migrates existing v2 profiles while retaining Coins, collection, expedition count, and secured total.
 
-DataStore persistence needs a published Roblox experience and API access enabled. The prototype has not been published; test in Studio first. See [GAME_DESIGN.md](GAME_DESIGN.md) for design decisions and remaining ship gates.
+DataStore persistence needs a published Roblox experience and API access enabled. Studio currently uses `SESSION_ONLY`, so progression resets between Studio sessions. The prototype has not been published. See [GAME_DESIGN.md](GAME_DESIGN.md) and [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) for design decisions and remaining ship gates.

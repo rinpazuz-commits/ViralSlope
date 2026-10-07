@@ -319,10 +319,12 @@ local function createCreatureVisual(creature, position, parent, onTouch)
 
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "Nameplate"
-	billboard.Size = UDim2.fromOffset(164, 42)
+	-- Keep nameplates compact and close-range so a cluster of distant pickups
+	-- does not fill the screen with overlapping labels.
+	billboard.Size = UDim2.fromOffset(132, 30)
 	billboard.StudsOffset = Vector3.new(0, 2.7, 0)
-	billboard.AlwaysOnTop = true
-	billboard.MaxDistance = 125
+	billboard.AlwaysOnTop = false
+	billboard.MaxDistance = 78
 	billboard.Parent = body
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
@@ -332,7 +334,8 @@ local function createCreatureVisual(creature, position, parent, onTouch)
 	label.TextColor3 = RARITY_COLORS[creature.Rarity] or Color3.new(1, 1, 1)
 	label.TextStrokeColor3 = Color3.fromRGB(29, 35, 55)
 	label.TextStrokeTransparency = 0.35
-	label.TextScaled = true
+	label.TextScaled = false
+	label.TextSize = 13
 	label.Parent = billboard
 
 	body.Touched:Connect(onTouch)

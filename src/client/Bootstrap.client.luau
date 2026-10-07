@@ -91,13 +91,32 @@ coins.TextXAlignment = Enum.TextXAlignment.Right
 local collection = Instance.new("TextButton")
 collection.Name = "Collection"
 collection.Position = UDim2.fromOffset(18, 127)
-collection.Size = UDim2.new(1, -36, 0, 19)
+collection.Size = UDim2.new(0.58, -18, 0, 20)
 collection.BackgroundTransparency = 1
 collection.Font = Enum.Font.GothamMedium
 collection.TextColor3 = palette.muted
 collection.TextSize = 12
 collection.TextXAlignment = Enum.TextXAlignment.Left
 collection.Parent = card
+local shopButton = Instance.new("TextButton")
+shopButton.Name = "Shop"
+shopButton.Position = UDim2.new(0.62, 0, 0, 126)
+shopButton.Size = UDim2.new(0.38, -18, 0, 22)
+shopButton.BackgroundColor3 = Color3.fromRGB(66, 61, 103)
+shopButton.BackgroundTransparency = 0.12
+shopButton.Font = Enum.Font.GothamBold
+shopButton.Text = "RELIC SHOP"
+shopButton.TextColor3 = palette.gold
+shopButton.TextSize = 11
+shopButton.AutoButtonColor = true
+shopButton.Parent = card
+local shopButtonCorner = Instance.new("UICorner")
+shopButtonCorner.CornerRadius = UDim.new(0, 8)
+shopButtonCorner.Parent = shopButton
+local shopButtonStroke = Instance.new("UIStroke")
+shopButtonStroke.Color = palette.gold
+shopButtonStroke.Transparency = 0.62
+shopButtonStroke.Parent = shopButton
 local hint = makeLabel("Hint", UDim2.fromOffset(18, 149), UDim2.new(1, -36, 0, 20), 11, Color3.fromRGB(197, 211, 237), false)
 hint.TextWrapped = true
 
@@ -265,7 +284,7 @@ local function refresh()
 	local count = player:GetAttribute("BagCount") or 0
 	bag.Text = string.format("BAG  %d/%d  •  %d at risk", count, 6, player:GetAttribute("BagValue") or 0)
 	coins.Text = string.format("%d COINS", player:GetAttribute("Coins") or 0)
-	collection.Text = string.format("COLLECTION %d  •  %d RUNS  •  FIELD GUIDE ›", player:GetAttribute("CollectionCount") or 0, player:GetAttribute("Expeditions") or 0)
+	collection.Text = string.format("GUIDE %d  •  %d RUNS", player:GetAttribute("CollectionCount") or 0, player:GetAttribute("Expeditions") or 0)
 end
 
 local function applyResponsiveScale()
@@ -274,7 +293,8 @@ local function applyResponsiveScale()
 	local compact = camera.ViewportSize.X < 430
 	bag.TextSize = compact and 12 or 14
 	coins.TextSize = compact and 12 or 14
-	collection.TextSize = compact and 9 or 12
+	collection.TextSize = compact and 9 or 11
+	shopButton.TextSize = compact and 9 or 11
 	hint.TextSize = compact and 9 or 11
 	phase.TextSize = compact and 12 or 14
 	timer.TextSize = compact and 18 or 20

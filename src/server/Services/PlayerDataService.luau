@@ -3,6 +3,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CreatureCatalog = require(ReplicatedStorage.Shared.CreatureCatalog)
+local CosmeticCatalog = require(ReplicatedStorage.Shared.CosmeticCatalog)
 
 local PlayerDataService = {}
 local cache = {}
@@ -19,11 +20,13 @@ else
 end
 
 local DEFAULT_DATA = {
-	SchemaVersion = 2,
+	SchemaVersion = 3,
 	Coins = 0,
 	Collection = {},
 	Expeditions = 0,
 	TotalSecured = 0,
+	OwnedCosmetics = {},
+	EquippedCosmetic = "",
 }
 
 local function countCollection(collection)
@@ -42,6 +45,14 @@ local function encodeCollection(collection)
 	return HttpService:JSONEncode(snapshot)
 end
 
+local function encodeOwnedCosmetics(owned)
+	local snapshot = {}
+	for _, item in CosmeticCatalog.Items do
+		snapshot[item.Id] = owned[item.Id] == true
+	end
+	return HttpService:JSONEncode(snapshot)
+end
+
 local function sanitizeNumber(value, minimum, maximum)
 	if type(value) ~= "number" or value ~= value or value == math.huge or value == -math.huge then
 		return minimum
@@ -52,6 +63,7 @@ end
 local function loadData(player)
 	local data = table.clone(DEFAULT_DATA)
 	data.Collection = {}
+	data.OwnedCosmetics = {}
 	if not store then return data, false end
 
 	local success, saved = pcall(function()
@@ -64,7 +76,7 @@ local function loadData(player)
 	if type(saved) ~= "table" then return data, true end
 
 	data.Coins = sanitizeNumber(saved.Coins, 0, 1_000_000_000)
-	data.SchemaVersion = 2
+	data.SchemaVersion = 3
 	data.Expeditions = sanitizeNumber(saved.Expeditions, 0, 10_000_000)
 	data.TotalSecured = sanitizeNumber(saved.TotalSecured, 0, 1_000_000_000_000)
 	if type(saved.Collection) == "table" then
@@ -73,6 +85,19 @@ local function loadData(player)
 				data.Collection[id] = sanitizeNumber(count, 0, 1_000_000)
 			end
 		end
+	end
+	if type(saved.OwnedCosmetics) == "table" then
+		for id, isOwned in saved.OwnedCosmetics do
+			if type(id) == "string" and isOwned == true and CosmeticCatalog.Get(id) then
+				data.OwnedCosmetics[id] = true
+			end
+		end
+	end
+	if type(saved.EquippedCosmetic) == "string"
+		and data.OwnedCosmetics[saved.EquippedCosmetic]
+		and CosmeticCatalog.Get(saved.EquippedCosmetic)
+	then
+		data.EquippedCosmetic = saved.EquippedCosmetic
 	end
 	return data, true
 end
@@ -83,11 +108,13 @@ local function makeSnapshot(data)
 		collection[id] = count
 	end
 	return {
-		SchemaVersion = 2,
+		SchemaVersion = 3,
 		Coins = data.Coins,
 		Collection = collection,
 		Expeditions = data.Expeditions,
 		TotalSecured = data.TotalSecured,
+		OwnedCosmetics = table.clone(data.OwnedCosmetics),
+		EquippedCosmetic = data.EquippedCosmetic,
 	}
 end
 
@@ -124,6 +151,58 @@ function PlayerDataService:AddCoins(player, amount)
 	return data.Coins
 end
 
+local function updateCosmeticAttributes(player, data)
+	player:SetAttribute("OwnedCosmetics", encodeOwnedCosmetics(data.OwnedCosmetics))
+	player:SetAttribute("EquippedCosmetic", data.EquippedCosmetic or "")
+end
+
+function PlayerDataService:GetCosmeticState(player)
+	local data = cache[player]
+	if not data then return nil end
+	return {
+		Coins = data.Coins,
+		Owned = table.clone(data.OwnedCosmetics),
+		Equipped = data.EquippedCosmetic,
+	}
+end
+
+function PlayerDataService:BuyCosmetic(player, itemId)
+	local data = cache[player]
+	local item = type(itemId) == "string" and CosmeticCatalog.Get(itemId) or nil
+	if not data or not item then return false, "INVALID_ITEM" end
+	if data.OwnedCosmetics[item.Id] then return false, "ALREADY_OWNED" end
+	if data.Coins < item.Price then return false, "NOT_ENOUGH_COINS" end
+
+	-- No yielding between checking the balance and charging it: concurrent requests
+	-- from a single player cannot buy the same item twice or overspend the cache.
+	data.Coins -= item.Price
+	data.OwnedCosmetics[item.Id] = true
+	data.EquippedCosmetic = item.Id
+	player:SetAttribute("Coins", data.Coins)
+	local stats = player:FindFirstChild("leaderstats")
+	local coinsValue = stats and stats:FindFirstChild("Coins")
+	if coinsValue then coinsValue.Value = data.Coins end
+	updateCosmeticAttributes(player, data)
+	return true, "PURCHASED"
+end
+
+function PlayerDataService:EquipCosmetic(player, itemId)
+	local data = cache[player]
+	if not data then return false, "DATA_NOT_READY" end
+	if itemId == "" or itemId == nil then
+		data.EquippedCosmetic = ""
+		updateCosmeticAttributes(player, data)
+		return true, "UNEQUIPPED"
+	end
+	if type(itemId) ~= "string" or not CosmeticCatalog.Get(itemId) then
+		return false, "INVALID_ITEM"
+	end
+	if not data.OwnedCosmetics[itemId] then return false, "NOT_OWNED" end
+	data.EquippedCosmetic = itemId
+	updateCosmeticAttributes(player, data)
+	return true, "EQUIPPED"
+end
+
 function PlayerDataService:AddCreature(player, creature)
 	local data = cache[player]
 	if not data or type(creature) ~= "table" or type(creature.Id) ~= "string" then return end
@@ -157,6 +236,7 @@ function PlayerDataService:InitPlayer(player)
 	player:SetAttribute("CollectionData", encodeCollection(data.Collection))
 	player:SetAttribute("Expeditions", data.Expeditions)
 	player:SetAttribute("TotalSecured", data.TotalSecured)
+	updateCosmeticAttributes(player, data)
 
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
