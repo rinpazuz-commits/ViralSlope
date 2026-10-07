@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CreatureCatalog = require(ReplicatedStorage.Shared.CreatureCatalog)
@@ -9,6 +10,9 @@ local PlayerDataService = {}
 local cache = {}
 local saveInProgress = {}
 local store
+local SESSION_LOCK_TTL = 180
+local SESSION_LOCK_RETRIES = 6
+local SESSION_LOCK_RETRY_DELAY = 3
 
 local ok, result = pcall(function()
 	return DataStoreService:GetDataStore("RiftRunners_PlayerData_v1")
@@ -60,20 +64,59 @@ local function sanitizeNumber(value, minimum, maximum)
 	return math.floor(math.clamp(value, minimum, maximum))
 end
 
+local function acquireProfile(player)
+	local token = HttpService:GenerateGUID(false)
+	local key = tostring(player.UserId)
+	local lastError
+	for attempt = 1, SESSION_LOCK_RETRIES do
+		local success, profile = pcall(function()
+			return store:UpdateAsync(key, function(saved)
+				local current = if type(saved) == "table" then table.clone(saved) else {}
+				local lock = current.SessionLock
+				local lockExpired = type(lock) ~= "table"
+					or type(lock.ExpiresAt) ~= "number"
+					or lock.ExpiresAt <= os.time()
+				if lockExpired or lock.Token == token then
+					current.SessionLock = {
+						Token = token,
+						JobId = game.JobId,
+						ExpiresAt = os.time() + SESSION_LOCK_TTL,
+					}
+				end
+				return current
+			end)
+		end)
+		if success then
+			if type(profile) == "table" and type(profile.SessionLock) == "table" and profile.SessionLock.Token == token then
+				return profile, token
+			end
+			lastError = "Profile is active in another server"
+		else
+			lastError = tostring(profile)
+			warn("[Rift Runners] Profile lock request failed for " .. player.UserId .. ": " .. lastError)
+		end
+		if attempt < SESSION_LOCK_RETRIES then task.wait(SESSION_LOCK_RETRY_DELAY) end
+	end
+	return nil, nil, lastError or "Profile lock timed out"
+end
+
 local function loadData(player)
 	local data = table.clone(DEFAULT_DATA)
 	data.Collection = {}
 	data.OwnedCosmetics = {}
-	if not store then return data, false end
-
-	local success, saved = pcall(function()
-		return store:GetAsync(tostring(player.UserId))
-	end)
-	if not success then
-		warn("[Rift Runners] Data load failed for " .. player.UserId .. ": " .. tostring(saved))
-		return data, false
+	if not store then
+		if RunService:IsStudio() then return data, false, nil, "SESSION_ONLY" end
+		return nil, false, nil, "PROFILE_UNAVAILABLE: DataStore could not be opened"
 	end
-	if type(saved) ~= "table" then return data, true end
+
+	local saved, token, acquireError = acquireProfile(player)
+	if not saved then
+		if RunService:IsStudio() then
+			warn("[Rift Runners] Studio profile is session-only: " .. tostring(acquireError))
+			return data, false, nil, "SESSION_ONLY"
+		end
+		return nil, false, nil, "PROFILE_UNAVAILABLE: " .. tostring(acquireError)
+	end
 
 	data.Coins = sanitizeNumber(saved.Coins, 0, 1_000_000_000)
 	data.SchemaVersion = 3
@@ -99,7 +142,8 @@ local function loadData(player)
 	then
 		data.EquippedCosmetic = saved.EquippedCosmetic
 	end
-	return data, true
+	data.SessionToken = token
+	return data, true, token, "SAVED"
 end
 
 local function makeSnapshot(data)
@@ -118,21 +162,48 @@ local function makeSnapshot(data)
 	}
 end
 
-local function save(player)
+local function save(player, releaseLock)
 	local data = cache[player]
-	if not data or not data.CanSave or not store then return end
+	if not data or not data.CanSave or not store or not data.SessionToken then return false end
 	while saveInProgress[player] do task.wait(0.1) end
 	saveInProgress[player] = true
 	local payload = makeSnapshot(data)
+	local lockLost = false
 	local success, err = pcall(function()
-		store:UpdateAsync(tostring(player.UserId), function()
-			return payload
+		store:UpdateAsync(tostring(player.UserId), function(current)
+			if type(current) ~= "table"
+				or type(current.SessionLock) ~= "table"
+				or current.SessionLock.Token ~= data.SessionToken
+			then
+				lockLost = true
+				return nil
+			end
+			local updated = table.clone(payload)
+			if releaseLock then
+				updated.SessionLock = nil
+			else
+				updated.SessionLock = {
+					Token = data.SessionToken,
+					JobId = game.JobId,
+					ExpiresAt = os.time() + SESSION_LOCK_TTL,
+				}
+			end
+			return updated
 		end)
 	end)
 	saveInProgress[player] = nil
 	if not success then
 		warn("[Rift Runners] Data save failed for " .. player.UserId .. ": " .. tostring(err))
+		return false
 	end
+	if lockLost then
+		data.CanSave = false
+		player:SetAttribute("PersistenceStatus", "SESSION_LOST")
+		warn("[Rift Runners] Session lock was lost for " .. player.UserId .. "; saving disabled to protect the profile")
+		return false
+	end
+	if releaseLock then data.SessionToken = nil end
+	return true
 end
 
 function PlayerDataService:Get(player)
@@ -226,11 +297,16 @@ function PlayerDataService:CompleteExpedition(player, totalSecured, countExpedit
 end
 
 function PlayerDataService:InitPlayer(player)
-	local data, canSave = loadData(player)
+	local data, canSave, sessionToken, persistenceStatus = loadData(player)
+	if not data then
+		warn("[Rift Runners] Refusing to load an unlocked profile for " .. player.UserId .. ": " .. tostring(persistenceStatus))
+		player:Kick("Your data is still active in another server. Please try joining again shortly.")
+		return
+	end
 	data.CanSave = canSave
+	data.SessionToken = sessionToken
 	cache[player] = data
-	local data = cache[player]
-	player:SetAttribute("PersistenceStatus", canSave and "SAVED" or "SESSION_ONLY")
+	player:SetAttribute("PersistenceStatus", persistenceStatus)
 	player:SetAttribute("Coins", data.Coins)
 	player:SetAttribute("CollectionCount", countCollection(data.Collection))
 	player:SetAttribute("CollectionData", encodeCollection(data.Collection))
@@ -253,7 +329,7 @@ function PlayerDataService:InitPlayer(player)
 end
 
 function PlayerDataService:RemovePlayer(player)
-	save(player)
+	save(player, true)
 	cache[player] = nil
 end
 
@@ -282,7 +358,7 @@ function PlayerDataService:Init()
 		for _, player in Players:GetPlayers() do
 			pending += 1
 			task.spawn(function()
-				save(player)
+				save(player, true)
 				pending -= 1
 			end)
 		end

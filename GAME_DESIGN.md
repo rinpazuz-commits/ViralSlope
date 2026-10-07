@@ -19,6 +19,7 @@ Run into a glowing alien wilderness, find original creatures with visible rarity
 - Original creature names and simple silhouettes; no existing meme characters, borrowed game art, or cloned base-stealing layout.
 - Creatures are earned by playing. There are no paid random rolls or paid survival advantages in the MVP.
 - Schema v3 preserves v2 progression and adds owned/equipped cosmetic state. Collection, Coins, extraction count, and leaderboard use DataStore when published with API access enabled. Studio currently falls back to `SESSION_ONLY`.
+- A renewable session lease guards profile loads/saves against two servers writing the same player data. Verify it with a private published experience before relying on durable saves.
 - The Atelier offers Aurora Crown (450 Coins), Stardust Wake (850 Coins), and Pocket Riftling (1,600 Coins). The server validates purchases/equips; cosmetics provide no gameplay advantage.
 - The game remains playable solo, so a quiet server is not an empty round.
 
