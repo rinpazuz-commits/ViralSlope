@@ -2,6 +2,8 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local CreatureCatalog = require(ReplicatedStorage.Shared.CreatureCatalog)
@@ -87,6 +89,36 @@ local function createRiftOutcrop(parent, position, accent, scale)
 	second.CanCollide = false
 	second.CanTouch = false
 	second.CanQuery = false
+end
+
+local function playExtractionBurst(position, bag)
+	if #bag == 0 then return end
+	local worldFolder = Workspace:FindFirstChild("RiftRunnersWorld")
+	if not worldFolder then return end
+	local shardCount = math.min(10, #bag * 2)
+	for index = 1, shardCount do
+		local angle = (index - 1) * math.pi * 2 / shardCount
+		local direction = Vector3.new(math.cos(angle), 0, math.sin(angle))
+		local shard = Instance.new("Part")
+		shard.Name = "ExtractionSpark"
+		shard.Shape = Enum.PartType.Ball
+		shard.Size = Vector3.new(0.72, 0.72, 0.72)
+		shard.Position = position + Vector3.new(0, 2.2, 0) + direction * 1.4
+		shard.Color = bag[(index - 1) % #bag + 1].Color or Color3.fromRGB(110, 245, 219)
+		shard.Material = Enum.Material.Neon
+		shard.Anchored = true
+		shard.CanCollide = false
+		shard.CanTouch = false
+		shard.CanQuery = false
+		shard.CastShadow = false
+		shard.Parent = worldFolder
+		TweenService:Create(shard, TweenInfo.new(0.48, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = position + Vector3.new(0, 3.2, 0) + direction * 7,
+			Size = Vector3.new(0.12, 0.12, 0.12),
+			Transparency = 1,
+		}):Play()
+		Debris:AddItem(shard, 0.55)
+	end
 end
 
 local function buildWorld()
@@ -477,6 +509,7 @@ function RiftService:BankBag(player)
 		value += creature.Value
 		PlayerDataService:AddCreature(player, creature)
 	end
+	playExtractionBurst(root.Position, bag)
 	CurrencyService:Add(player, value)
 	local summary = roundSummary[player]
 	-- A run may bank several times. Count its expedition once, while every

@@ -10,7 +10,7 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 
 - Local repo: `/Users/apolon/Roblox/ViralSlope`
 - GitHub: `https://github.com/rinpazuz-commits/ViralSlope`
-- Main branch; implementation checkpoint: `153ad63 Protect player profiles with session leases` (inspect `git log -1` for the current handoff commit).
+- Main branch; implementation checkpoint: inspect `git log -1` for the latest commit. The current working tree includes an extraction burst that still needs a real in-game bank test.
 - Roblox Studio place tab: `Place1`; Rojo plugin was connected to `localhost:34872` in the previous session.
 - All player-facing text is English.
 - Game concept/name: **Rift Runners** — collect original alien creatures during a timed expedition, then extract at the portal before the Warden catches you or the rift closes.
@@ -25,25 +25,26 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 - DataStore schema v3 saves Coins, creature counts by ID, expeditions, total secured, owned cosmetics, and equipped cosmetic. The v2 migration preserves existing progression. In Studio it reports `SESSION_ONLY` until a suitable published test universe/API access is configured.
 - Atomic session lease is in the current source: acquire through `UpdateAsync`, renew on the 90-second autosave (180-second expiry), verify the token before every save, and release on player leave/server shutdown. Studio failure falls back to non-saving defaults with a warning; published servers refuse to load a profile if they cannot acquire its lock.
 - Rift Relic Atelier has three earned-Coin cosmetics: Aurora Crown (450), Stardust Wake (850), Pocket Riftling (1,600). `CosmeticService` validates/applies effects server-side; `CosmeticShop.client` supplies the responsive UI. The hub includes a 3D showcase and proximity prompt.
+- Successful extraction now spawns a brief radial burst of colored neon sparks based on the banked Riftlings (`RiftService.playExtractionBurst`). The Rojo build succeeds with this change; the effect has not yet been triggered and visually checked in a playtest.
 - Last polish fixed a duplicate-species pickup deleting the wrong model, bag-full touch incorrectly claiming a creature, mobile HUD sizing, and multiple banks incrementing the expedition count more than once per run.
 
 ## Verified and unverified
 
-- `rojo build -o /private/tmp/RiftRunners.rbxlx` and `git diff --check` succeeded after the cosmetic shop and session-lock code changes.
+- `rojo build -o /private/tmp/RiftRunners.rbxlx` and `git diff --check` succeeded after adding the extraction burst.
 - Roblox Studio playtest confirmed the English HUD, cosmetic shop with all three prices, and the insufficient-Coins response at a 0 balance. Restarted Studio on the latest source; the game and portal loaded. Nameplates were reduced in size and view distance after overlap was observed.
 - Studio playtest after the session-lock change still starts and displays the intended `SAVE UNAVAILABLE` notice because Studio cannot access the live profile. This confirms the session-only fallback path, not the lock or durable saves.
-- Not yet verified: successful purchase/equip/unequip/respawn visuals, several full rounds, death/full-bag/Warden balance under real play, multi-client concurrency, actual mobile touch UI, phone performance, DataStore persistence across sessions, or player retention. Do not say those are tested.
+- Not yet verified: extraction burst appearance in a real bank, successful purchase/equip/unequip/respawn visuals, several full rounds, death/full-bag/Warden balance under real play, multi-client concurrency, actual mobile touch UI, phone performance, DataStore persistence across sessions, or player retention. Do not say those are tested.
 - Previous Claude reviews were based on descriptions, not direct inspection of the running game/current code. Main useful feedback: close the coin progression loop, validate risk cases, improve visual/audio identity, and test DataStore/authority.
 
 ## Active next milestone
 
-Finish validating the cosmetic shop loop in Roblox Studio: successful purchase, equip/unequip, and respawn reapplication (the insufficient-balance response and fresh build/restart already passed). Then add audio/visual polish, test multiple players and mobile readability, and verify session locking and persistence in a private published test universe.
+Safely validate the extraction burst and cosmetic purchase/equip/unequip/respawn loop in Roblox Studio. An old Command Bar draft containing a coin-grant expression is visible in the current Studio window; do not execute it. Avoid editing Studio scripts manually. Then continue audio/visual polish, test multiple players and mobile readability, and verify session locking and persistence in a private published test universe.
 
 Claude reviewed the architecture and the reported Studio checks, but its normal desktop chat cannot read this local repo. It confirmed the unverified gates: successful purchase across restart, respawn cosmetics, migration with real v2 data, and durable DataStore behavior. It recommends using a separate private test universe/DataStore, then testing session-lock reacquisition, fast repeat purchases, insufficient balance, non-owned equip attempts, and cosmetic cleanup/reapply through respawn. For source review, paste `PlayerDataService.luau`, `CosmeticService.luau`, `CosmeticShop.client.luau`, and `CosmeticCatalog.luau` into Claude or use Claude Code against this repo. Inspect `git status` and this handoff before edits, and coordinate overlapping writes.
 
 ## Remaining release gates
 
-1. Implement and playtest the earned-coin cosmetic loop.
+1. Playtest the extraction burst and earned-coin cosmetic loop.
 2. Improve the world/character/item art and add original sound feedback; check device performance.
 3. Test mobile and multi-player cases, then run repeated complete rounds and tune Warden difficulty.
 4. Use a private test experience to validate DataStore load/save/leave/shutdown before public launch.

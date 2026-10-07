@@ -24,6 +24,7 @@ rojo serve
 - End-of-run recap reports secured finds, lost finds, and coins earned; server checks pickups, bag limits, and portal distance.
 - English responsive HUD, field guide, end-of-run recap, and in-server Coins/Critters leaderboard.
 - Rift Relic Atelier: three cosmetics purchasable with earned Coins, with server-validated ownership/equipping and character visuals.
+- Successful portal extraction plays a brief burst of colored sparks matching the Riftlings you secured.
 - Schema v3 migrates existing v2 profiles while retaining Coins, collection, expedition count, and secured total.
 - Profile saves use an atomic session lease to prevent overlapping servers from overwriting the same player's progress.
 
