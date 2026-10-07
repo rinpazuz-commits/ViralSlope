@@ -1,22 +1,21 @@
 # Viral Game Factory
 
-This repository is the reusable foundation for rapidly producing original Roblox games.
+This repository is the reusable foundation for building original Roblox games quickly. **Nightshift Salvage** is the first production pilot.
 
 ## Production loop
 
-1. Pick a simple, trend-inspired core mechanic.
-2. Change the fantasy, progression, economy, visuals and naming so the result is original.
-3. Configure the game in `src/shared/Config.luau`.
-4. Build gameplay as isolated services/systems.
-5. Test in Roblox Studio through Rojo.
-6. Iterate from playtest data.
-7. Duplicate the template for the next game.
+1. Read Roblox's current charts and identify an audience need or proven mechanic.
+2. Create a distinct theme, objective, map, progression, and visual identity around that signal.
+3. Configure shared systems in `src/shared` and build game-specific systems as isolated server services.
+4. Sync with Rojo and test the complete player loop in Roblox Studio.
+5. Fix blockers, then prepare the experience page, icon, thumbnail, age questionnaire, and publish checklist.
+6. Release a small first version, measure player behavior, and iterate before investing in more content.
 
 ## Architecture
 
 - `src/shared` — configuration and shared modules
-- `src/server` — authoritative game logic
-- `src/client` — UI/input/feedback
-- `src/server/Services` — reusable server services
+- `src/server` — authoritative game logic and player data
+- `src/client` — interface, input, and moment-to-moment feedback
+- `src/server/Services` — reusable server systems
 
-The factory should optimize for fast iteration, clean separation of systems, and reusable modules rather than copying another game's content.
+Each new game should preserve the useful core and replace its theme-specific game loop, map, and content. Never copy a trending game's name, map, characters, artwork, or distinctive content.

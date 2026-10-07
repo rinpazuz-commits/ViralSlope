@@ -1,9 +1,9 @@
 local Services = script.Parent.Services
 
 local PlayerDataService = require(Services.PlayerDataService)
-local RunService = require(Services.RunService)
+local ExpeditionService = require(Services.ExpeditionService)
 
 PlayerDataService:Init()
-RunService:Init()
+ExpeditionService:Init()
 
-print("[ViralSlope] Server booted")
+print("[Nightshift Salvage] Server booted")
