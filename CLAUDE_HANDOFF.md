@@ -10,7 +10,7 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 
 - Local repo: `/Users/apolon/Roblox/ViralSlope`
 - GitHub: `https://github.com/rinpazuz-commits/ViralSlope`
-- Main branch; latest pushed commit before current work: `bb6b803 Update Claude handoff with shop test results`
+- Main branch; implementation checkpoint: `153ad63 Protect player profiles with session leases` (inspect `git log -1` for the current handoff commit).
 - Roblox Studio place tab: `Place1`; Rojo plugin was connected to `localhost:34872` in the previous session.
 - All player-facing text is English.
 - Game concept/name: **Rift Runners** — collect original alien creatures during a timed expedition, then extract at the portal before the Warden catches you or the rift closes.
@@ -23,7 +23,7 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 - Server owns pickup, bag capacity, extraction distance, coin reward, collection updates, and run summary.
 - English responsive HUD, field guide (species counts), bank/loss messages, end-of-run recap, and Coins/Critters leaderboard.
 - DataStore schema v3 saves Coins, creature counts by ID, expeditions, total secured, owned cosmetics, and equipped cosmetic. The v2 migration preserves existing progression. In Studio it reports `SESSION_ONLY` until a suitable published test universe/API access is configured.
-- Current uncommitted work adds an atomic session lease to the same profile key: acquire through `UpdateAsync`, renew on the 90-second autosave (180-second expiry), verify the token before every save, and release on player leave/server shutdown. Studio failure falls back to non-saving defaults with a warning; published servers refuse to load a profile if they cannot acquire its lock.
+- Atomic session lease is in the current source: acquire through `UpdateAsync`, renew on the 90-second autosave (180-second expiry), verify the token before every save, and release on player leave/server shutdown. Studio failure falls back to non-saving defaults with a warning; published servers refuse to load a profile if they cannot acquire its lock.
 - Rift Relic Atelier has three earned-Coin cosmetics: Aurora Crown (450), Stardust Wake (850), Pocket Riftling (1,600). `CosmeticService` validates/applies effects server-side; `CosmeticShop.client` supplies the responsive UI. The hub includes a 3D showcase and proximity prompt.
 - Last polish fixed a duplicate-species pickup deleting the wrong model, bag-full touch incorrectly claiming a creature, mobile HUD sizing, and multiple banks incrementing the expedition count more than once per run.
 
@@ -39,7 +39,7 @@ The user has explicitly given Codex and Claude carte blanche to keep developing 
 
 Finish validating the cosmetic shop loop in Roblox Studio: successful purchase, equip/unequip, and respawn reapplication (the insufficient-balance response and fresh build/restart already passed). Then add audio/visual polish, test multiple players and mobile readability, and verify session locking and persistence in a private published test universe.
 
-Claude reviewed the architecture from a summary but cannot read this local repo from its normal desktop chat. It recommended versioned migration, preserving profiles on load failure, server-owned prices/atomic debit, late-join state fetch, low-cost effects, and large mobile targets. Several are implemented; session locking and live DataStore tests remain open. For a direct review, paste `PlayerDataService.luau`, `CosmeticService.luau`, `CosmeticShop.client.luau`, and `CosmeticCatalog.luau` into Claude or use Claude Code against this repo. Inspect `git status` and this handoff before edits, and coordinate overlapping writes.
+Claude reviewed the architecture and the reported Studio checks, but its normal desktop chat cannot read this local repo. It confirmed the unverified gates: successful purchase across restart, respawn cosmetics, migration with real v2 data, and durable DataStore behavior. It recommends using a separate private test universe/DataStore, then testing session-lock reacquisition, fast repeat purchases, insufficient balance, non-owned equip attempts, and cosmetic cleanup/reapply through respawn. For source review, paste `PlayerDataService.luau`, `CosmeticService.luau`, `CosmeticShop.client.luau`, and `CosmeticCatalog.luau` into Claude or use Claude Code against this repo. Inspect `git status` and this handoff before edits, and coordinate overlapping writes.
 
 ## Remaining release gates
 
