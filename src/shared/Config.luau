@@ -1,7 +1,10 @@
 return {
-	GAME_NAME = "Nightshift Salvage",
-	VERSION = "0.2.0",
-	STARTING_CASH = 0,
-	MAX_CASH = 1e12,
-	DEBUG = true,
+	GAME_NAME = "Rift Runners",
+	VERSION = "0.3.0",
+	ROUND_SECONDS = 150,
+	BREAK_SECONDS = 12,
+	PICKUP_COUNT = 24,
+	MAX_COINS = 1_000_000_000,
+	SAFE_RADIUS = 42,
+	WORLD_RADIUS = 240,
 }

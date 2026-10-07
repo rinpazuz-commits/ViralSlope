@@ -1,24 +1,41 @@
-# Nightshift Salvage — vertical slice
+# Rift Runners — MVP brief
 
-## The pitch
+## Player promise
 
-Players leave a beacon-lit refuge to recover strange signal shards from abandoned forest relays. They decide how long to stay: each shard increases the value in their bag, but **The Echo** tracks anyone carrying salvage. Players must return to the beacon before the 100-second expedition ends; a safe return banks the haul, while a knockout or nightfall loses it.
+Run into a bright, alien rift, find original creatures with visible rarity, and make it back to the home portal before the rift closes. Every creature in your satchel is at risk until you return.
 
-## Why this direction
+## Core loop
 
-Roblox's current charts include very large collection/stealing games, co-op survival, pet experiences, and action games. This prototype combines the broad appeal of collection and timed co-op survival with an original night-signal setting and extraction choice. It does not reuse another experience's characters, names, map, assets, or exact loop. Charts are a demand signal, not a promise of success.
+1. Spawn at the home portal and read the one-line objective.
+2. Explore four colored rift gardens and collect up to six Riftlings.
+3. The Warden wakes after the first creature is picked up and chases players carrying finds.
+4. Return to the home portal to permanently add creatures to the collection and convert their value into coins.
+5. Compare the public Coins and Critters leaderboard, then enter the next run.
 
-## Current playable loop
+## Product choices
 
-1. Wait at the refuge for the next expedition.
-2. Explore five abandoned relay sites and collect randomly placed signal shards.
-3. Keep an eye on The Echo and the countdown.
-4. Return to the beacon to bank the bag as cash.
-5. Spend recovered cash in future progression updates; records and extractions are saved when DataStore access is available.
+- English-only UI and world copy for the first release.
+- Original creature names and simple silhouettes; no existing meme characters, borrowed game art, or cloned base-stealing layout.
+- Creatures are earned by playing. There are no paid random rolls or paid survival advantages in the MVP.
+- Collection, coins, extraction count, and leaderboard are saved through DataStore when the experience is published and API access is enabled.
+- The game remains playable solo, so a quiet server is not an empty round.
 
-## Prototype limits
+## Prototype balance targets
 
-- The map and art are assembled from original primitive parts; final custom art, audio, and polish are still needed.
-- Relics are shared pickups in this first version; party matchmaking, individual loot instances, upgrades, and a shop are not implemented yet.
-- DataStore persistence depends on Roblox experience settings and a published universe. Studio may warn that API access is unavailable.
-- Publishing, the experience icon/thumbnail, age questionnaire, monetization, analytics, and live-player testing are separate production steps.
+- First creature is a low-risk Common close to the portal.
+- A featured Epic is present each run, far enough away to require a decision.
+- Bag limit: 6. Carrying more slows the player slightly.
+- The Warden gives a warning and a short grace period, then approaches the nearest player carrying creatures. Its speed stays below the loaded player's movement speed; greed, detours, and mistakes create the danger.
+- Runs last 150 seconds, with a 12-second home break.
+
+## Ship gates
+
+- Verify collection and banking with more than one player; verify simultaneous pickup cannot duplicate a creature.
+- Play several full runs after the first successful extraction and tune the Warden from observed extraction rates.
+- Check keyboard, touch controls, HUD readability, and performance on a modest phone.
+- Test DataStore load, autosave, leave, rejoin, failure handling, and server shutdown after publishing to a private test universe.
+- Add a proper icon, thumbnails, sound, final art, age questionnaire, localized metadata, and monetization only after the core loop earns repeat plays.
+
+## Reality check
+
+Current chart positions show demand, not a forecast for a new game. The prototype is not yet evidence of retention or revenue. The first test should measure whether players voluntarily start a second run, then whether they return on another day.
