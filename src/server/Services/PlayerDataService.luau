@@ -17,10 +17,23 @@ function PlayerDataService:AddCash(player, amount)
 	local data = cache[player]
 	if not data then return end
 	data.Cash += amount
+	player:SetAttribute("Cash", data.Cash)
+	return data.Cash
+end
+
+function PlayerDataService:AddBestDistance(player, distance)
+	local data = cache[player]
+	if not data then return end
+	if distance > data.BestDistance then
+		data.BestDistance = distance
+		player:SetAttribute("BestDistance", distance)
+	end
 end
 
 function PlayerDataService:InitPlayer(player)
 	cache[player] = table.clone(DEFAULT_DATA)
+	player:SetAttribute("Cash", DEFAULT_DATA.Cash)
+	player:SetAttribute("BestDistance", DEFAULT_DATA.BestDistance)
 end
 
 function PlayerDataService:RemovePlayer(player)
