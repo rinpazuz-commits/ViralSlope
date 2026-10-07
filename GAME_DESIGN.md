@@ -13,6 +13,8 @@ Run into a glowing alien wilderness, find original creatures with visible rarity
 5. Spend earned Coins at the Rift Relic Atelier on cosmetic-only headgear, a stardust trail, or a companion.
 6. Open the field guide, review the run recap, compare the leaderboard, then enter again.
 
+During a run, the HUD points toward the nearest available Riftling; once a player carries a find, it points back to the portal. This keeps the risk/reward loop legible on an open map without granting an item advantage.
+
 ## Product choices
 
 - English-only UI and world copy for the first release.

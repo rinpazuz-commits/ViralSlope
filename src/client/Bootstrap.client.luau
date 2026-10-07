@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local CreatureCatalog = require(ReplicatedStorage.Shared.CreatureCatalog)
@@ -264,6 +265,63 @@ local function formatTime(seconds)
 	return string.format("%02d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
+local compassPoints = { "↑", "↗", "→", "↘", "↓", "↙", "←", "↖" }
+
+local function directionGlyph(fromPosition, toPosition)
+	local camera = Workspace.CurrentCamera
+	if not camera then return "" end
+	local offset = Vector3.new(toPosition.X - fromPosition.X, 0, toPosition.Z - fromPosition.Z)
+	if offset.Magnitude < 1 then return "•" end
+	local forward = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
+	local right = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z)
+	if forward.Magnitude < 0.01 or right.Magnitude < 0.01 then return "" end
+	forward = forward.Unit
+	right = right.Unit
+	local angle = math.atan2(right:Dot(offset.Unit), forward:Dot(offset.Unit))
+	local index = (math.floor(angle / (math.pi / 4) + 0.5) % #compassPoints) + 1
+	return compassPoints[index]
+end
+
+local function getNavigationHint()
+	local currentPhase = player:GetAttribute("Phase") or "HOME"
+	if currentPhase ~= "RIFT_RUN" then return nil end
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then return "FIND RIFTLINGS AND FOLLOW THE WAYFINDER LIGHTS" end
+
+	local bagCount = player:GetAttribute("BagCount") or 0
+	local targetPosition
+	local targetName
+	if bagCount > 0 then
+		targetPosition = Vector3.zero
+		targetName = "PORTAL"
+		local distance = (Vector2.new(root.Position.X, root.Position.Z) - Vector2.zero).Magnitude
+		if distance <= Config.SAFE_RADIUS then
+			return "PORTAL CLOSE  •  STEP IN TO SECURE YOUR SATCHEL"
+		end
+	else
+		local world = Workspace:FindFirstChild("RiftRunnersWorld")
+		local pickups = world and world:FindFirstChild("WildRiftlings")
+		local nearestDistance = math.huge
+		for _, model in pickups and pickups:GetChildren() or {} do
+			local part = model:IsA("Model") and model.PrimaryPart
+			if part then
+				local distance = (Vector2.new(root.Position.X, root.Position.Z) - Vector2.new(part.Position.X, part.Position.Z)).Magnitude
+				if distance < nearestDistance then
+					nearestDistance = distance
+					targetPosition = part.Position
+				end
+			end
+		end
+		if not targetPosition then return "NO RIFTLINGS LEFT  •  HEAD BACK TO THE PORTAL" end
+		targetName = "NEAREST RIFTLING"
+	end
+
+	local offset = targetPosition - root.Position
+	local distance = math.floor(Vector2.new(offset.X, offset.Z).Magnitude + 0.5)
+	return string.format("%s  •  %d AWAY  •  %s", targetName, distance, directionGlyph(root.Position, targetPosition))
+end
+
 local function refresh()
 	local currentPhase = player:GetAttribute("Phase") or "HOME"
 	local remaining = player:GetAttribute("RoundTime") or 0
@@ -280,6 +338,8 @@ local function refresh()
 		phase.TextColor3 = palette.gold
 		hint.Text = "Find up to 6. Return to the glowing portal to bank them."
 	end
+	local navigationHint = getNavigationHint()
+	if navigationHint then hint.Text = navigationHint end
 	timer.Text = formatTime(remaining)
 	local count = player:GetAttribute("BagCount") or 0
 	bag.Text = string.format("BAG  %d/%d  •  %d at risk", count, 6, player:GetAttribute("BagValue") or 0)
@@ -360,3 +420,10 @@ end)
 refresh()
 showPersistenceNotice()
 print("[Rift Runners] HUD ready (English)")
+
+task.spawn(function()
+	while gui.Parent do
+		if player:GetAttribute("Phase") == "RIFT_RUN" then refresh() end
+		task.wait(1)
+	end
+end)

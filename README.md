@@ -22,6 +22,7 @@ rojo serve
 - 150-second runs, a six-creature satchel, one featured Epic, and a pursuing Warden.
 - Safe extraction banks creatures into the persistent collection and adds coins; a field guide tracks all 12 discoveries.
 - End-of-run recap reports secured finds, lost finds, and coins earned; server checks pickups, bag limits, and portal distance.
+- Dynamic run guidance points toward the nearest available Riftling, then toward the portal when carrying a find.
 - English responsive HUD, field guide, end-of-run recap, and in-server Coins/Critters leaderboard.
 - Rift Relic Atelier: three cosmetics purchasable with earned Coins, with server-validated ownership/equipping and character visuals.
 - Successful portal extraction plays a brief burst of colored sparks matching the Riftlings you secured.
